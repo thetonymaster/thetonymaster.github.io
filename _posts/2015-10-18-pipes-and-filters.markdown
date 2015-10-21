@@ -35,43 +35,43 @@ The problem consists of four steps:
 
 Go already implements a way to communicate between components, channels. Channels can be bi or unidirectional.  For this implementation every filter exposes and receives a receive-only channel, the latter is where the messages will be received from a preceding filter, and the former is where the messages will be written and read from another component. This is achieved with the generator “pattern” (Pike, n.d.), which is a method where a receive-only channel is returned.
 
-```go
+{% highlight go %}
 func NewCityFilter(in <-chan []byte) <-chan []byte {
 	out := make(chan []byte, 10)
 	go filter(in, out)
 	return out
 }
-```
+{% endhighlight %}
 
 As seen on the last figure, `out` is the channel where the result will be written; in this case this filter will read the json and send every single city to the next filter; `go` is used to start a goroutine which receives each of the channels. `filter` is where the processing happens, the channel is inside a `for` loop, which executes the body every time a new message is received.
 
-```go
+{% highlight go %}
 func filter(in <-chan []byte, out chan []byte) {
 	for msg := range in {
-```
+{% endhighlight %}
 
 When all the tasks are done the result is simply written on the out channel and returns to the initial state.
 
-```go
+{% highlight go %}
 res, err := json.Marshal(ct2)
 if err != nil {
 	panic(err)
 }
 out <- res
-```
+{% endhighlight %}
 
 ### Elixir implementation
 
 The communication between processes in elixir is done via `send`, which is a native function which receives the PID of the process and the message to be sent. The function to start a new process is `spawn`, which receives the class and method and returns the PID of the new process.
 
-```elixir
+{% highlight elixir %}
 cities = spawn(Cities, :filter, [])
 :global.register_name("nextcity", cities)
-```
+{% endhighlight %}
 
 The method defined in the send method must implement receive which waits until a message is sent.
 
-```elixir
+{% highlight elixir %}
 def filter do
     receive do
       cities ->
@@ -79,16 +79,16 @@ def filter do
     end
     filter
 end
-```
+{% endhighlight %}
 
 Due to the nature of being a functional language, Elixir does not implement loops, the function must implement recursion to be able to receive new messages, otherwise the process exits after receiving the first message. The way to connect every filter in this approach is either to pass the PID of the process or to register as a global variable, for this implementation the solution used was to register the PID and access it with a keyword
 
-```elixir
+{% highlight elixir %}
 cities = spawn(Cities, :filter, [])
 :global.register_name("nextcity", cities)
 
 forecast = spawn(Forecast, :get, [])
-:global.register_name("nextforecast", forecast)
+``:global.register_name("nextforecast", forecast)
 
 writer = spawn(Sink, :write, [])
 :global.register_name("nextsink", writer)
@@ -97,7 +97,7 @@ defp get_cities [next | tail] do
       send :global.whereis_name("nextforecast"), next
       get_cities tail
 end
-```
+{% endhighlight %}
 
 # Conclusions
 
