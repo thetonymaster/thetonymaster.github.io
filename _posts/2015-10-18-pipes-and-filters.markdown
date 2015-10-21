@@ -8,7 +8,7 @@ categories: patterns go elixir
 
 One of the integration challenges in a computer system is the processing of incoming messages, which may require two or more steps to produce any meaningful data, the most common approach for this is to write a module that performs every task sequentially, however it would be very inflexible and difficult to test. Decoupling every step in a different component allows its reuse in complete different processes  (Hohpe & Woolf, 2012, p. 70). This also allows the execution in different physical machines , or the use of different programming languages or technologies (MSDN, n.d.). Even if these components are separated, dependencies can still be introduced. To fix this a common interface must be exposed independent of the dependency introduced, so they can be interchangeable.
 
-![Pipes and filters]({{ site.url }}/assets/PipesAndFilters.jpg)
+![Pipes and filters](http://thetonymaster.github.io/assets/PipesAndFilters.jpg)
 
 If we use asynchronous messaging between each component we can take advantage and process each message asynchronously or concurrently, without having to wait for the results. Using this technique we could process multiple messages in parallel.
 
