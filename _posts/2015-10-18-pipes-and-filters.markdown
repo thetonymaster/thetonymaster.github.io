@@ -88,7 +88,7 @@ cities = spawn(Cities, :filter, [])
 :global.register_name("nextcity", cities)
 
 forecast = spawn(Forecast, :get, [])
-``:global.register_name("nextforecast", forecast)
+:global.register_name("nextforecast", forecast)
 
 writer = spawn(Sink, :write, [])
 :global.register_name("nextsink", writer)
