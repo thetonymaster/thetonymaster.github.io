@@ -101,11 +101,18 @@ defp get_cities [next | tail] do
 end
 {% endhighlight %}
 
-# Conclusions
+# Observations
+
+## Metrics
+
+|   	   | LOC | # of functions  | Av. LOC per function  | Cyclomatic complexity | Performance |
+|--------|-----|-----------------|-----------------------|-----------------------|-------------|
+| Go     | 241 |        10       |          24.1         |           5           |             |
+| Elixir | 135 |        16       |           8.4         |           1           |             |
 
 The total lines of code for the Go implementation where 190 and for Elixir 153.
 
-# Personal conclusions
+## Qualitative observations
 The implementation for golang is clearer due to the nature of channels, which can define which direction (either send or receive) they have, also they can be passed to another goroutine without any complications. On the other side, elixir has to know every PID of to be able to send messages, besides, go channels have the advantage of being buffered and to be closed in case something happens.
 
 On the topic of messages, elixir messages can be virtually anything due to having metaprogramming, while go had a lot of boilerplate code to deal with the messages being in plain bytecode, but while go just had a lot of boilerplate code, in Elixir you had a lot of functions just to extract the data, and to transform it, while it had a lot of code, it also has a lot more of complexity.
