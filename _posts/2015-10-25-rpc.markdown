@@ -1,0 +1,228 @@
+---
+layout: post
+title:  "Remote Procedure Call"
+date:   2015-10-25 22:09:02
+categories: patterns go elixir
+---
+# RPC
+
+Remote Procedure Call (or Remote Procedure Invocation) is a way for two or more applications to share data without the risk of exposing unencapsulated data, with other approaches like Shared Database or File Transfer, the data is not encapsulated due to the lack of an interface with another application, which can be less responsive to the needs of the business. With RPC each application maintains data integrity, if a chunk of data is needed all that has to be done is to ask the other application for it. If the data schema on one application changes, it does not affect the other one, the interface exposed maintains the way data is presented (Hohpe & Woolf, 2012, p. 51). There are different technologies to help to implement this pattern such as CORBA, COM, .NET remoting, Java RMI or RabbitMQ.
+
+A RPC exchange requires the following parts:
+
+`Client`: A process which uses the requested service provided by another program, it’s unaware of the implementation details behind the call.
+
+`Server`: Responds to the request of a client. Implementation details for obtaining the data must be placed here.
+
+`Endpoint`: Address or port on a host system that is monitored by the server for incoming client requests. Is a specific address for a remote procedure call.
+
+`Endpoint Mapper`: Part of the RPC subsystem that resolves the endpoints.
+
+`Client stub`: Module within the client application that contains all the functions necessary to make RPC calls,.
+
+`Server stub`: Module within the server application that handles the remote calls using local procedures.(TechNet, n.d.)
+
+## Advantages
+
+The advantage of RPC is that allows multiple interfaces to expose data, which can help to deal with semantic dissonance. Allowing each client to see data in multiple formats and views.
+
+## Disadvantages
+
+- If the developers don’t understand the difference between local and remote calls  can lead to a reduction of performance.
+- Each application is still fairly tightly coupled, due to designs tend to be as single applications, instead of taking the rules of engagement different.
+- It can be difficult to do procedures in sequence.
+
+# Implementation
+
+## The problem
+
+1. Get a server that handles remote procedures
+2. Get the fibonacci number for an input
+
+### Go implementation
+
+Go already has methods in the standard library to help with the implementation of RPC; however it has to follow the next rules:
+
+- The method’s type is exported
+- The method is exported
+- Has two arguments, (exported or builtin types)
+- The second argument is a pointer
+- Returns an error
+(“rpc - The Go Programming Language,” n.d.)
+
+First, we declare a type, which will have all the methods to expose to the remote procedures.
+
+{% highlight go %}
+type FibServer struct{}
+{% endhighlight %}
+
+Next are the methods associated to the type:
+
+{% highlight go %}
+func (s FibServer) GetFibonacci(number int, result \*int) error {
+	\*result = fibonacci(number)
+	return nil
+}
+{% endhighlight %}
+
+Next are the methods associated to the type:
+
+{% highlight go %}
+func (s FibServer) GetFibonacci(number int, result \*int) error {
+	\*result = fibonacci(number)
+	return nil
+}
+{% endhighlight %}
+
+
+In go, there are two ways to receive parameters, the first is before the name of the function, which is a custom type, normally a struct and used to add behaviour to the objects, and the latter which is how normally parameters are received. The first parameter received is number, which will be used to calculate the fibonacci, the second is used to return the result of the operations, this can be any custom type needed; in case that complex responses are required. And as required by the standard library, an error is returned.
+
+
+To implement the server, any IO interface can be used, in this case the selected method was http, the standard library already implements a concurrent solution, which spawns a goroutine for each request. To start the http server, an instance of the type written before is declared, and registered with the rpc package.
+
+{% highlight go %}
+fibserver := new(server.FibServer)
+rpc.Register(fibserver)
+rpc.HandleHTTP()
+{% endhighlight %}
+
+
+
+Next, a listener in a certain port is required, and a method of transport, which as mentioned before is http.
+
+{% highlight go %}
+l, e := net.Listen("tcp", ":1234")
+if e != nil {
+	log.Fatal("listen error:", e)
+}
+go http.Serve(l, nil)
+{% endhighlight %}
+
+
+
+If we run this code, will spawn a goroutine which will listen on port 1234 for RPC requests.  Now, all that’s needed for making calls is a client, the RPC library dials to the server, if the server cannot accept connections then it will return an error.
+
+{% highlight go %}
+client, err := rpc.DialHTTP("tcp", "localhost:1234")
+if err != nil {
+	log.Fatal("dialing:", err)
+}
+{% endhighlight %}
+
+After receiving a client two ways of making a call can be used, synchronous and asynchronous, synchronous calls will wait until  the call is done, and return an error otherwise, asynchronous calls will return a channel which will be written once the method is done, the response written in the channel contains details about the call done, such as errors and call parameters.
+
+{% highlight go %}
+// Synchronous call
+var reply int
+err = client.Call("FibServer.GetFibonacci", 10, &reply)
+if err != nil {
+	log.Fatal("error:", err)
+}
+fmt.Printf("Result: %d\n", reply)
+
+// Async call
+var reply2 int
+asyncCall := client.Go("FibServer.GetFibonacci", 10, &reply2, nil)
+if err != nil {
+	log.Fatal("error:", err)
+}
+<-asyncCall.Done
+fmt.Printf("Result: %d\n", reply2)
+{% endhighlight %}
+
+
+### Elixir implementation
+Elixir runs over the Erlang virtual machine, due to this it has access to the libraries of its parent, one of this is the native RPC library, the use of the library is pretty straightforward, it only has to specify three parameters, the node’s name, the method and a list of arguments, but elixir has another approach to distributed messaging which can be GenServers (which is a more elegant but complex solution) or simple calls to a process PID, the latter was chosen for this implementation. (“Introduction to Distributed Messaging with Elixir - Reactive.TIPS - The Official Blog of Reactive.IO,” n.d.)
+
+To avoid using a custom package for rpc, a simple router will be written, taking advantage of the pattern matching capabilities of the language, commands will be sent to the process and it will call other methods or respond accordingly. A function called loop is written to help to map the requests, it will call itself receiving a hashmap with the clients connected to the server, used to easily send back the messages to the caller.
+
+{% highlight elixir %}
+  def loop(subs) do
+    receive do
+      {:subscribe, name, pid} ->
+        Logger.info("#{name} subscribed")
+        loop(HashDict.put(subs, name, pid))
+      {:unsubscribe, name} ->
+        Logger.info("#{name} unsubscribed")
+        loop(HashDict.delete(subs, name))
+{% endhighlight %}
+
+
+For the caller to start sending RPC, it must first subscribe to the server, which is done sending the name of the node,the PID and the atom subscribe, it can also stop receiving messages from the  server, sending the atom unsubscribe and it’s name. To call a method just add an option with pattern matching:
+
+{% highlight elixir %}
+{:fib, name, items} ->
+        Logger.info("#{name} sent a job")
+        res = Enum.map(items, &fib &1)
+        send(HashDict.get(subs, name), {:fib, res})
+        loop(subs)
+{% endhighlight %}
+
+To call the method fib, the name and a list of items are received, which is a list of number to be calculated, when the calculations are finished. Finally, to start the server we proceed with spawning a process with the loop method, sending it a clean hashmap, and registering the PID globally so new clients can get the PID of the node after they are connected.
+
+{% highlight elixir %}
+@name :rpcserver
+
+  def start do
+    pid = spawn __MODULE__, :loop, [HashDict.new]
+    :global.register_name(@name, pid)
+  end
+{% endhighlight %}
+
+On the client side, it needs to connect to the server node first, every node has a sname or shortname that identifies it, followed by the name of the host.
+
+{% highlight elixir %}
+def connect do
+    Node.connect(:"rpcserver@tony-M14xR2")
+end
+{% endhighlight %}
+
+As stated before, the node should be subscribed to the server, so the next step is to send the message to start the subscription.
+
+{% highlight elixir %}
+  def subscribe(name) do
+    pid = spawn(__MODULE__, :notify, [])
+
+    send :global.whereis_name(@name), {:subscribe, name, pid}
+
+    %Client{name: name, pid: pid}
+  end
+{% endhighlight %}
+
+And to send the message:
+
+{% highlight elixir %}
+  def fib(%Client{name: name}, item) do
+    send server, {:fib, name, item}
+  end
+{% endhighlight %}
+
+The other important part of the code, is the loop that receives the incoming messages from the server, here is where the code that handles the incoming messages from the calls done to the server, more operations with the result can be done, like other calls or further calculations.
+
+The next step is to go to the terminal, to start the server first we must type `iex --sname rpcserver -S mix` (this is implying mix is being used to manage the project), this will start a session with a node name `rpcserver`, afterwards we start the server using `Rpc.start` and a confirmation message will appear.
+
+Next, we start the session for the client in other terminal, as with the server, a node name is needed to start the client, in this case the name will be `node1`, but any name can be used:  `iex --sname node1 -S mix`. To connect to the server we use the method `connect` under the namespace `Client`, and finally a subscription request is sent.
+
+Now, RPC requests can be sent as distributed messaging:
+
+# Observations
+
+Metrics
+|                       |   Go  |  Elixir |
+|-----------------------|:-----:|:-------:|
+| LOC                   | 40    |   51    |
+| # of Functions        |  3    |    9    |
+| Av. LOC per Function  | 13.33 |    5.66 |
+| Cyclomatic complexity |  5    |    1    |
+
+
+# Qualitative observations
+
+Despite having a bigger cyclomatic complexity, the Go implementation is more straightforward the Elixir’s, and supports more protocols than just one. On the other hand with Elixir can be argued that RPC can be replaced by interprocess messaging and its model of distributed applications, which in Go is more oriented towards http/tcp protocols and Elixir is based on Erlang messaging protocols.
+
+# Bibliography
+
+Hohpe, G., & Woolf, B. (2012). Enterprise Integration Patterns: Designing, Building, and Deploying Messaging Solutions. Addison-Wesley.
+Introduction to Distributed Messaging with Elixir - Reactive.TIPS - The Official Blog of Reactive.IO. (n.d.). Retrieved October 25, 2015, from http://www.reactive.io/tips/2015/02/07/introduction-to-distributed-messaging-with-elixir/
+rpc - The Go Programming Language. (n.d.). Retrieved October 25, 2015, from https://golang.org/pkg/net/rpc/
+TechNet, M. (n.d.). What Is RPC?: Remote Procedure Call (RPC). Retrieved October 22, 2015, from https://technet.microsoft.com/en-us/library/cc787851(v=ws.10).aspx
