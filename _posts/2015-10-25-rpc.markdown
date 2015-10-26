@@ -234,6 +234,10 @@ Despite having a bigger cyclomatic complexity, the Go implementation is more str
 # Bibliography
 
 Hohpe, G., & Woolf, B. (2012). Enterprise Integration Patterns: Designing, Building, and Deploying Messaging Solutions. Addison-Wesley.
-Introduction to Distributed Messaging with Elixir - Reactive.TIPS - The Official Blog of Reactive.IO. (n.d.). Retrieved October 25, 2015, from http://www.reactive.io/tips/2015/02/07/introduction-to-distributed-messaging-with-elixir/
+Introduction to Distributed Messaging with Elixir
+
+Reactive.TIPS - The Official Blog of Reactive.IO. (n.d.). Retrieved October 25, 2015, from http://www.reactive.io/tips/2015/02/07/introduction-to-distributed-messaging-with-elixir/
+
 rpc - The Go Programming Language. (n.d.). Retrieved October 25, 2015, from https://golang.org/pkg/net/rpc/
+
 TechNet, M. (n.d.). What Is RPC?: Remote Procedure Call (RPC). Retrieved October 22, 2015, from https://technet.microsoft.com/en-us/library/cc787851(v=ws.10).aspx
