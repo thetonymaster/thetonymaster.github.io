@@ -8,6 +8,9 @@ categories: patterns go elixir
 
 Remote Procedure Call (or Remote Procedure Invocation) is a way for two or more applications to share data without the risk of exposing unencapsulated data, with other approaches like Shared Database or File Transfer, the data is not encapsulated due to the lack of an interface with another application, which can be less responsive to the needs of the business. With RPC each application maintains data integrity, if a chunk of data is needed all that has to be done is to ask the other application for it. If the data schema on one application changes, it does not affect the other one, the interface exposed maintains the way data is presented (Hohpe & Woolf, 2012, p. 51). There are different technologies to help to implement this pattern such as CORBA, COM, .NET remoting, Java RMI or RabbitMQ.
 
+<script src="/assets/js/processing.min.js"></script>
+<canvas data-processing-sources="/assets/processing/pipes-and-filters.pde"></canvas>
+
 A RPC exchange requires the following parts:
 
 `Client`: A process which uses the requested service provided by another program, it’s unaware of the implementation details behind the call.
