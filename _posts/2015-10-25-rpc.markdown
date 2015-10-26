@@ -204,9 +204,16 @@ The other important part of the code, is the loop that receives the incoming mes
 
 The next step is to go to the terminal, to start the server first we must type `iex --sname rpcserver -S mix` (this is implying mix is being used to manage the project), this will start a session with a node name `rpcserver`, afterwards we start the server using `Rpc.start` and a confirmation message will appear.
 
+![Start the server](/assets/img/sc1.png)
+
 Next, we start the session for the client in other terminal, as with the server, a node name is needed to start the client, in this case the name will be `node1`, but any name can be used:  `iex --sname node1 -S mix`. To connect to the server we use the method `connect` under the namespace `Client`, and finally a subscription request is sent.
 
-Now, RPC requests can be sent as distributed messaging:
+![Connect the client](/assets/img/sc2.png)
+
+Now, RPC requests can be sent with distributed messaging:
+
+![Send a call](/assets/img/sc3.png)
+
 
 # Observations
 
