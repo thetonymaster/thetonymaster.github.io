@@ -35,6 +35,7 @@ void draw(){
   c.draw();
   s.draw();
 
+  text("Click on the client to send a message", 200, 230);
 }
 
 void mousePressed(){
