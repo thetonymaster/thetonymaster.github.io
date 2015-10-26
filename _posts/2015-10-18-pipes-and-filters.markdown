@@ -8,7 +8,7 @@ categories: patterns go elixir
 
 One of the integration challenges in a computer system is the processing of incoming messages, which may require two or more steps to produce any meaningful data, the most common approach for this is to write a module that performs every task sequentially, however it would be very inflexible and difficult to test. Decoupling every step in a different component allows its reuse in complete different processes  (Hohpe & Woolf, 2012, p. 70). This also allows the execution in different physical machines , or the use of different programming languages or technologies (MSDN, n.d.). Even if these components are separated, dependencies can still be introduced. To fix this a common interface must be exposed independent of the dependency introduced, so they can be interchangeable.
 
-![Pipes and filters](http://thetonymaster.github.io/assets/PipesAndFilters.jpg)
+![Pipes and filters](/assets/img/PipesAndFilters.jpg)
 <script src="/assets/js/processing.min.js"></script>
 <canvas data-processing-sources="/assets/processing/pipes-and-filters.pde"></canvas>
 
@@ -105,10 +105,15 @@ end
 
 ## Metrics
 
-|   	   | LOC | # of functions  | Av. LOC per function  | Cyclomatic complexity | Performance |
-|--------|:---:|:---------------:|:---------------------:|:---------------------:|:-----------:|
-| Go     | 241 |        10       |          24.1         |           5           |             |
-| Elixir | 135 |        16       |           8.4         |           1           |             |
+
+|                       |   Go   |  Elixir |
+|-----------------------|:------:|:-------:|
+| LOC                   |  241   |  135    |
+| # of Functions        |   10   |   16    |
+| Av. LOC per Function  |   24.1 |    8.4  |
+| Cyclomatic complexity |    5   |    1    |
+
+
 
 The total lines of code for the Go implementation where 190 and for Elixir 153.
 
