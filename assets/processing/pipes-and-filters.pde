@@ -2,7 +2,7 @@ Filter[] filters;
 Pipe[] pipes;
 ArrayList<Message> messages;
 int messagenumber;
-static final int labelPadding = 20;
+static final int labelPadding = 35;
 
 color[] transColors;
 color[] strokeTr;
@@ -17,27 +17,27 @@ Producer p;
 Message m1;
 
 void setup(){
-  size(400,150);
+  size(800,400);
 
   setupTransforms();
 
   messages = new ArrayList<Message>();
   filters = new Filter[3];
-  p = new Producer(50, 50, "Producer");
-  s = new Sink(330, 50, "Sink");
+  p = new Producer(50, 200, "Producer");
+  s = new Sink(700, 200, "Sink");
 
-  filters[0] = new Filter(50, 120, 10,"Filter A");
-  filters[1] = new Filter(50, 190, 60, "Filter B");
-  filters[2] = new Filter(50, 260, 5, "Filter C" );
+  filters[0] = new Filter(200, 200, 10,"Filter A");
+  filters[1] = new Filter(200, 375, 60, "Filter B");
+  filters[2] = new Filter(200, 550, 5, "Filter C" );
 
   currFilter = 0;
   messagenumber = 0;
 
   pipes = new Pipe[4];
-  pipes[0] = new Pipe(60, 50, 105, 50);
-  pipes[1] = new Pipe(135, 50, 175, 50);
-  pipes[2] = new Pipe(205, 50, 245, 50);
-  pipes[3] = new Pipe(275, 50, 320, 50);
+  pipes[0] = new Pipe(75, 200, 150, 200);
+  pipes[1] = new Pipe(250, 200, 325, 200);
+  pipes[2] = new Pipe(425, 200, 500, 200);
+  pipes[3] = new Pipe(600, 200, 675, 200);
 
   clicked = false;
 
@@ -65,12 +65,11 @@ void draw() {
   p.draw();
   s.draw();
 
-
-
   stroke(0);
   fill (0);
   textAlign(CENTER, CENTER);
-  text("Click on the producer to send a message", 180, 100);
+  textSize(20);
+  text("Click on the producer to send a message", 375, 270);
 
 }
 
@@ -85,7 +84,7 @@ void mouseReleased(){
   if(clicked){
     clicked = false;
     p.toggleColor();
-    messages.add(new Message(62.5,50));
+    messages.add(new Message(75,200));
   }
 }
 
@@ -105,10 +104,10 @@ void setupTransforms(){
  strokeTr[3] = color(139,137,137);
 
 
- radiiTr[0] = 5;
- radiiTr[1] = 7;
- radiiTr[2] = 9;
- radiiTr[3] = 11;
+ radiiTr[0] = 10;
+ radiiTr[1] = 15;
+ radiiTr[2] = 20;
+ radiiTr[3] = 25;
 
 }
 
@@ -226,7 +225,7 @@ class Filter extends Node {
   Filter(float tempYpos, float tempXpos, int delaytemp, String label){
     c = color(146,169,186);
     super(label, c, tempXpos, tempYpos);
-    radius = 30;
+    radius = 50;
     delay = delaytemp;
   }
 
@@ -234,7 +233,7 @@ class Filter extends Node {
   stroke(0);
     ellipseMode(CENTER);
     fill(c);
-    rect(x, y, radius, radius - 10);
+    rect(x, y, radius + 50, radius);
     super.drawLabel();
   }
 
@@ -254,8 +253,8 @@ class Producer extends Node{
   boolean toggle;
   Producer(float tempxpos, float tempypos, String label){
     super(label, c, tempxpos, tempypos);
-    width = 20;
-    height = 20;
+    width = 50;
+    height = 50;
     toggle = false;
  }
 
@@ -291,8 +290,8 @@ class Sink extends Node{
 
   Sink(float tempxpos, float tempypos, String label){
     super(label, c, tempxpos, tempypos);
-    width = 20;
-    height = 20;
+    width = 50;
+    height = 50;
   }
 
   void draw(){
@@ -327,6 +326,7 @@ abstract class Node{
     stroke(0);
     fill (0);
     textAlign(CENTER, CENTER);
+    textSize(14);
     text(getLabel(), x, y+labelPadding);
   }
 
