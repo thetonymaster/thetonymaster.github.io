@@ -114,9 +114,6 @@ end
 | Cyclomatic complexity |    5   |    1    |
 
 
-
-The total lines of code for the Go implementation where 190 and for Elixir 153.
-
 ## Qualitative observations
 The implementation for golang is clearer due to the nature of channels, which can define which direction (either send or receive) they have, also they can be passed to another goroutine without any complications. On the other side, elixir has to know every PID of to be able to send messages, besides, go channels have the advantage of being buffered and to be closed in case something happens.
 

@@ -1,9 +1,19 @@
+---
+layout: post
+title:  "Publish Subscribe"
+date:   2015-10-29 22:09:02
+categories: patterns go elixir
+---
+
 # Publish-Subscribe
 The publish-subscribe pattern (or PubSub) is described as a way to broadcast messages to different Observers, decoupling them from them from the subjects (the subjects being the producers of the messages), the subject must be able to notify all the interested observers (even none). The pattern expands upon the Observer by adding the notion of an event channel for communicating event notifications. (Hohpe & Woolf, 2012, p. 106)
 
-Each subscriber must be notified of a particular event once but should not be notified more than once for the same event, once they have been notified the message should be considered consumed. To avoid violating the Observer pattern, the subscribers should not coordinate to determine if the messages are consumed. When using concurrent consumers they should not compete but share the message. 
+<script src="/assets/js/processing.min.js"></script>
+<canvas data-processing-sources="/assets/processing/pubsub.pde"></canvas>
 
-PubSub works like this: the producer has one input channel that splits into multiple channels one for each of the consumers, when an event is published, the producer sends a copy of the message to each of the consumers, so the message is consumed only once on each one of them. 
+Each subscriber must be notified of a particular event once but should not be notified more than once for the same event, once they have been notified the message should be considered consumed. To avoid violating the Observer pattern, the subscribers should not coordinate to determine if the messages are consumed. When using concurrent consumers they should not compete but share the message.
+
+PubSub works like this: the producer has one input channel that splits into multiple channels one for each of the consumers, when an event is published, the producer sends a copy of the message to each of the consumers, so the message is consumed only once on each one of them.
 
 This pattern can be used as a debugging tool, eavesdropping in the message channel without disrupting the message flow. This can help to avoid to use println messages or logging them, but this can also be a disadvantage, someone can write a program to listen to the messages.
 
@@ -161,8 +171,11 @@ Using the pattern matching capabilities, the `handle_cast` function can handle m
     new_state = Map.put(state, topic, new_list)
     {:noreply, new_state}
   end
+{% endhighlight %}
 
 To start to send and receive messages, first we need to start the server using `PubSub.start_link()`, after this register all the clients and topics needed.
+
+![Start the server](/assets/img/sc4.png)
 
 # Observations
 
@@ -187,5 +200,3 @@ GenServer – Elixir v1.1.1. (n.d.). Retrieved October 28, 2015, from http://eli
 Hohpe, G., & Woolf, B. (2012). Enterprise Integration Patterns: Designing, Building, and Deploying Messaging Solutions. Addison-Wesley.
 
 Pike, R. (n.d.). Go Concurrency Patterns. Retrieved October 28, 2015, from http://talks.golang.org/2012/concurrency.slide#25
-
-
