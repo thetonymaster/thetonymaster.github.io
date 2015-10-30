@@ -1,5 +1,5 @@
 # Site settings
-title: Concurrency patterns
+title: thetonymaster.github.io
 email: antonio.cabreraglz@gmail.com
 description: > # Comparing concurrency patterns using go and elixir
 baseurl: "" # the subpath of your site, e.g. /blog/
