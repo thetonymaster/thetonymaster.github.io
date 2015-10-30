@@ -3,6 +3,7 @@ layout: post
 title:  "Pipes and filters"
 date:   2015-10-18 22:09:02
 categories: patterns go elixir
+comments: true
 ---
 # Pipes and filters
 

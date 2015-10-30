@@ -3,6 +3,7 @@ layout: post
 title:  "Publish Subscribe"
 date:   2015-10-29 22:09:02
 categories: patterns go elixir
+comments: true
 ---
 
 # Publish-Subscribe

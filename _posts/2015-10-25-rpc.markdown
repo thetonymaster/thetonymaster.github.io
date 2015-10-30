@@ -3,6 +3,7 @@ layout: post
 title:  "Remote Procedure Call"
 date:   2015-10-25 22:09:02
 categories: patterns go elixir
+comments: true
 ---
 # RPC
 
