@@ -247,6 +247,7 @@ end
 This server has three main functions: `:add_task`, `:dispatch` and `:register`; `:add_task` queues every incoming job, `:dispatch` sends jobs to the workers, if there are no jobs in queue the worker will be queued and served when any job is available, finally `:register` starts to monitor each of the workers pid.
 
 {% highlight elixir %}
+{% raw %}
 def handle_cast({:add_task, task, payload}, state) do
 	job = %Job{task: task, payload: payload}
 	{:noreply, queue_job(job, state)}
@@ -265,6 +266,7 @@ def handle_call(:register, {worker, _msg_ref}, state) do
 	Process.monitor(worker)
 	{:reply, :ok, state}
 end
+{% endraw %}
 {% endhighlight %}
 
 After finishing the `Worker` and the `WorkerQueue` implementation, its needed to wrap up those parts and ensure they are working, even after a work failed, to achieve this `Supervisor` instances are used, the configuration is pretty straightforward, one is needed for the workers, and another one supervises the Worker supervisor and the queue. for qhe worker supervisor, the arguments needed are are how many workers will be spawned and the time, which along which a given time frame, will define how many restarts of a process is allowed in how much time.
