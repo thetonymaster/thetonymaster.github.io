@@ -34,14 +34,14 @@ The advantage of RPC is that allows multiple interfaces to expose data, which ca
 
 - If the developers don’t understand the difference between local and remote calls  can lead to a reduction of performance.
 - Each application is still fairly tightly coupled, due to designs tend to be as single applications, instead of taking the rules of engagement different.
-- It can be difficult to do procedures in sequence.
+- It can be difficult to do remote procedures in sequence.
 
 # Implementation
 
 ## The problem
 
 1. Get a server that handles remote procedures
-2. Get the fibonacci number for an input
+2. Get the fibonacci number for a given input
 
 ### Go implementation
 
@@ -54,13 +54,13 @@ Go already has methods in the standard library to help with the implementation o
 - Returns an error
 (“rpc - The Go Programming Language,” n.d.)
 
-First, we declare a type, which will have all the methods to expose to the remote procedures.
+First, we declare a type. Normally a `struct` is used to pass useful values used later, like db passwords and hostnames.
 
 {% highlight go %}
 type FibServer struct{}
 {% endhighlight %}
 
-Next are the methods associated to the type:
+Go it's not an strictly OOP language, instead, `structs` have the ability to "borrow" pieces of code embedding functions. So 	`GetFibonacci` is embedded inside the `FibServer` type, and is declared as an exported function, this function complies with the `interface` defined by the RPC package.
 
 {% highlight go %}
 func (s FibServer) GetFibonacci(number int, result *int) error {
