@@ -7,7 +7,7 @@ comments: true
 ---
 # Pipes and filters
 
-One of the integration challenges in a computer system is the processing of incoming messages, which may require two or more steps to produce any meaningful data, the most common approach for this is to write a module that performs every task sequentially, however it would be very inflexible and difficult to test. Decoupling every step in a different component allows its reuse in complete different processes  (Hohpe & Woolf, 2012, p. 70). This also allows the execution in different physical machines , or the use of different programming languages or technologies (MSDN, n.d.). Even if these components are separated, dependencies can still be introduced. To fix this a common interface must be exposed independent of the dependency introduced, so they can be interchangeable.
+One of the integration challenges in a computer system is the processing of incoming messages, which may require two or more steps to produce any meaningful data, the most common approach for this is to write a module that performs every task sequentially, however it would be very inflexible and difficult to test. Decoupling every step in a different component allows its reuse in complete different processes  (Hohpe & Woolf, 2012, p. 70). This also allows the execution in different physical machines, or the use of different programming languages or technologies (MSDN, n.d.). Even if these components are separated, dependencies can still be introduced. To fix this a common interface must be exposed independently of the dependency, so they can be interchangeable.
 
 ![Pipes and filters](/assets/img/PipesAndFilters.jpg)
 <script src="/assets/js/processing.min.js"></script>
@@ -46,14 +46,14 @@ func NewCityFilter(in <-chan []byte) <-chan []byte {
 }
 {% endhighlight %}
 
-As seen on the last figure, `out` is the channel where the result will be written; in this case this filter will read the json and send every single city to the next filter; `go` is used to start a goroutine which receives each of the channels. `filter` is where the processing happens, the channel is inside a `for` loop, which executes the body every time a new message is received.
+As seen on the last figure, `out` is the channel where the result will be written; in this case this filter will read the json and send every single city to the next filter; `go` is used to start a goroutine which receives each of the channels. The `filter` function is where the processing happens, the channel is inside a `for` loop, which executes the tasks for each of the filters.
 
 {% highlight go %}
 func filter(in <-chan []byte, out chan []byte) {
 	for msg := range in {
 {% endhighlight %}
 
-When all the tasks are done the result is simply written on the out channel and returns to the initial state.
+When all the tasks are done the result is simply written in the out channel and returns to the initial state.
 
 {% highlight go %}
 res, err := json.Marshal(ct2)
@@ -67,14 +67,14 @@ out <- res
 
 The concurrency model for elixir is the same as erlang, the abstraction is called actors; an actor basically receives a message and perform any kind of computation based on it. Every actor is completely isolated from other actors and they never share memory, it can maintain a private state that can be never be changed by another actor. The abstraction for the actor messaging system is called mailbox, if an it receives more than one messages it will process them sequentially (Storti, 2015).
 
-The communication between processes in elixir is done via `send`, which is a native function which receives the PID of the process and the message to be sent. The function to start a new process is `spawn`, which receives the class and method and returns the PID of the new process.
+The communication between processes in elixir is done via `send`, which is a native function which receives the `PID` of the process and the message to be sent. The function to start a new process is `spawn`, which receives the class and method and returns the `PID` of the new process.
 
 {% highlight elixir %}
 cities = spawn(Cities, :filter, [])
 :global.register_name("nextcity", cities)
 {% endhighlight %}
 
-The method defined in the send method must implement receive which waits until a message is sent.
+Each of the filters must implement the `receive` block, it will wait until a message is received. When this happens it will do the tasks specified and then exit. Due to the nature of being a functional language, Elixir does not implement loops, the function must implement recursion to be able to receive new messages, otherwise the process exits after receiving the first message.
 
 {% highlight elixir %}
 def filter do
@@ -86,7 +86,7 @@ def filter do
 end
 {% endhighlight %}
 
-Due to the nature of being a functional language, Elixir does not implement loops, the function must implement recursion to be able to receive new messages, otherwise the process exits after receiving the first message. The way to connect every filter in this approach is either to pass the `PID` of the process or to register as a global variable, for this implementation the solution used was to register the `PID` and access it with a keyword
+ Now that the filter is defined, every filter must be connected. The approach taken is either to pass the `PID` of the process or to register as a global variable, for this implementation the solution used was to register the `PID` and access it with a keyword
 
 {% highlight elixir %}
 cities = spawn(Cities, :filter, [])
@@ -104,6 +104,7 @@ defp get_cities [next | tail] do
 end
 {% endhighlight %}
 
+### Scala implementation
 
 For the scala implementation, a library called Akka will be used. Akka is a toolkit for building highly concurrent, distributed and resilient message driven applications (“Akka,” n.d.). Akka implements the actor system (the same system erlang and elixir use), but the main difference is that while elixir is a pure functional language, scala is more like a hybrid language, fusing object-oriented and functional principles, some concepts can be implemented as mutable, while others are strictly immutable. Scala used to have a default actor library, but this has been deprecated in favor for Akka by the time this post was written. (Vernon, 2015)
 
