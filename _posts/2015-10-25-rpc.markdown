@@ -215,22 +215,79 @@ Now, RPC requests can be sent with distributed messaging:
 
 ![Send a call](/assets/img/sc3.png)
 
+### Scala Implementation
+
+Scala does not provide a native library (unlike elixir which runs on the erlang VM), some third party library exists but will be not used for this example, instead and an approach like the one used for elixir will be used. The main difference between this languages is that while with elixir tow nodes can be spawned and connected via native methods, making them transparent, as if they were on the same node while Akka implements remote  nodes with TCP; a config file should be provided for every node or set of nodes, basic configuration like the hostname, protocols supported and default port are defined here.
+
+{% highlight scala %}
+akka {
+  loglevel = "INFO"
+  actor {
+    provider = "akka.remote.RemoteActorRefProvider"
+  }
+  remote {
+    enabled-transports = ["akka.remote.netty.tcp"]
+    netty.tcp {
+      hostname = "127.0.0.1"
+      port = 5150
+    }
+    log-sent-messages = on
+    log-received-messages = on
+  }
+}
+{% endhighlight %}
+
+{% highlight scala %}
+class FibServer extends Actor {
+  override def receive: Receive = {
+    case req: FibRequest => {
+      val res = fib(req.num)
+      sender ! Result(req.num, res)
+    }
+		case _ => println("Received unknown msg ")
+{% endhighlight %}
+
+The actor class for `FibServer` just reads a request, calculates the fibbonacci number for said input, if it receives a case class not supported it will simply print this fact. The companion object is where all the configuration hapens, typesafe provides a simple way to parse and apply a conf file.
+
+
+{% highlight scala %}
+object FibServer {
+  def main(args: Array[String]) {
+    val configFile = getClass.getClassLoader.getResource("remote_application.conf").getFile
+    val config = ConfigFactory.parseFile(new File(configFile))
+    val system = ActorSystem("RemoteSystem" , config)
+    val remote = system.actorOf(Props[FibServer], name="remote")
+    println("remote is ready")
+  }
+{% endhighlight %}
+
+The configuration for the client is pretty much the same, except that the reference for the client is got with the host and the remote actor system name, and it's done before the actor starts overriding the `preStart` function:
+
+{% highlight scala %}
+@throws[Exception](classOf[Exception])
+override def preStart(): Unit = {
+
+	val remoteActor = context.actorSelection("akka.tcp://RemoteSystem@127.0.0.1:5150/user/remote")
+	println("That 's remote:" + remoteActor)
+	remoteActor ! FibRequest(1)
+}
+{% endhighlight %}
 
 # Observations
 
 # Metrics
 
-|                       |   Go  |  Elixir |
-|-----------------------|:-----:|:-------:|
-| LOC                   | 40    |   51    |
-| # of Functions        |  3    |    9    |
-| Av. LOC per Function  | 13.33 |    5.66 |
-| Cyclomatic complexity |  5    |    1    |
+|                       |   Go  |  Elixir | Scala |
+|-----------------------|:-----:|:-------:|:------|
+| LOC                   | 40    |   51    |  31   |
+| # of Functions        |  3    |    9    |   6   |
+| Av. LOC per Function  | 13.33 |    5.66 |   5.1 |
+| Cyclomatic complexity |  5    |    1    |   3   |
 
 
 # Qualitative observations
 
-Despite having a bigger cyclomatic complexity, the Go implementation is more straightforward the Elixir’s, and supports more protocols than just one. On the other hand with Elixir can be argued that RPC can be replaced by interprocess messaging and its model of distributed applications, which in Go is more oriented towards http/tcp protocols and Elixir is based on Erlang messaging protocols.
+Despite having a bigger cyclomatic complexity, the Go implementation is more straightforward the Elixir and Scala's, and supports more protocols than just one. On the other hand with the latter both languages can be argued that RPC can be replaced by interprocess messaging and its model of distributed applications, which in Go is more oriented towards http/tcp protocols and Elixir is based on Erlang messaging protocols.
 
 # Bibliography
 
