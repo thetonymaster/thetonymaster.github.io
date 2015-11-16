@@ -16,7 +16,7 @@ Each subscriber must be notified of a particular event once but should not be no
 
 PubSub works like this: the producer has one input channel that splits into multiple channels one for each of the consumers, when an event is published, the producer sends a copy of the message to each of the consumers, so the message is consumed only once on each one of them.
 
-This pattern can be used as a debugging tool, eavesdropping in the message channel without disrupting the message flow. This can help to avoid to use println messages or logging them, but this can also be a disadvantage, someone can write a program to listen to the messages.
+This pattern can be used as a debugging tool, eavesdropping in the message channel without disrupting the message flow. This can help to avoid to use `println` messages or logging them, but this can also be a disadvantage, someone can write a program to listen to the messages.
 
 # Implementation
 
@@ -27,7 +27,7 @@ This pattern can be used as a debugging tool, eavesdropping in the message chann
 
 ### Go implementation
 
-Go channels cannot be shared in multiple goroutines, besides, it is not safe if; it can lead to race conditions or consistency problems, so the first step is to create a channel where every operation of the pubsub is sent, and have one main goroutine not sharing the main goroutine.
+The `PubSub` type has a channel which receives all the commands that are performed on this pattern, like subscribing, sending a message, etc.; Go channels should not be shared between multiple goroutines because it can lead to deadlocks and race conditions. To avoid this the `PubSub` goroutine is hidden from outside the package, instead a number of methods are provided which are the ones who write to it.
 
 {% highlight go %}
 type PubSub struct {
@@ -36,7 +36,7 @@ type PubSub struct {
 }
 {% endhighlight %}
 
-Next, a capacity for each of the subscriber goroutines it’s declared; this will accomplish two things, the buffer will not send messages if the goroutine has not finished processing the last message and better control will be had when the channel is closed, so it does not has remaining messages. After creating an instance of `PubSub`, the function that starts the management is sent to a goroutine.
+Next, a capacity for each of the subscriber goroutines it’s declared; this will accomplish two things, the buffer will not send messages if the goroutine has not finished processing the last message and better control will be had when the channel will be closed avoiding to close it when it has remaining elements. After creating an instance of `PubSub`, the constructor starts a goroutine with the `start` function, where is all the functionality happens.
 
 {% highlight go %}
 func New(capacity int) *PubSub {
@@ -84,7 +84,7 @@ loop:
 				chanm.send(topic, command.msg)
 {% endhighlight %}
 
-Each of the exported functions of the struct is used to perform an operation in the main loop to avoid exposure of the main channel, only the exported can write to it.
+As mentioned earlier, the exported functions can perform operations, to simplify this some methods call private functions to avoid cluttering.
 
 {% highlight go %}
 func (ps *PubSub) Sub(topics ...string) chan interface{} {
@@ -129,7 +129,7 @@ ps.Pub("Bye", "TopicA")
 
 ### Elixir implementation
 
-This implementation uses `Genserver`, which is a behaviour module for elixir which implements the server side of a server-client relation. `GenServer` is used to keep state (Elixir is stateless due to being a functional language) this avoids the use of a main loop and using a recursive function that retains the state, also implements a set of generic interface functions for functionality. (“GenServer – Elixir v1.1.1,” n.d.)
+This implementation uses `Genserver`, which is a behavior module for elixir which implements the server side of a server-client relation. `GenServer` is used to keep state (Elixir is stateless due to being a functional language) this avoids the use of a loop and a recursive function that retains the state. This also implements a set of generic interface functions for functionality. (“GenServer – Elixir v1.1.1,” n.d.)
 
 The first function of the server must be `start_link()` which calls the `init` method of our function:
 
@@ -139,7 +139,7 @@ The first function of the server must be `start_link()` which calls the `init` m
   end
 {% endhighlight %}
 
-In our case we only need to start the dictionary which will have the dictionary that holds the topics and PID’s of the processes subscribed to the server:
+In this case, only a dictionary is needed (which will be used to store the name and the `PID` of the clients), which is returned at the end of the `init` function.
 
 {% highlight elixir %}
   def init(_args) do
@@ -148,7 +148,7 @@ In our case we only need to start the dictionary which will have the dictionary 
   end
 {% endhighlight %}
 
-Then, the functions that will be called from each of the clients will be written, if the client does needs a synchronous call `GenServer.cast` callback will be used, otherwise `Genserver.call` will be used instead.  For example the subscribe function only receives the PID and the topic of the process, to finish the call the `handle_cast` method must be provided, which also will inject the state of our server.
+Next, if the client needs a synchronous call the `GenServer.cast` callback will be used, otherwise `Genserver.call` will be used instead. For example the subscribe function only receives the PID and the topic of the subscriber. To finish the call a `handle_cast` method must be provided, which also will inject the state of the GenServer.
 
 {% highlight elixir %}
 @spec subscribe(pid, topic) :: :ok
