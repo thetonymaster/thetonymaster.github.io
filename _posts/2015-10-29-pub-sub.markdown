@@ -178,16 +178,92 @@ To start to send and receive messages, first we need to start the server using `
 
 ![Start the server](/assets/img/sc4.png)
 
+### Scala Implementation
+
+The implementation in scala is fairly simple, `PubSubServer` extends the `EventBus` trait. It has an `eventStream` property on the local `ActorSystem` and its used to easily register subscribers and allow to publish events.
+
+Two classes are used to support the PubSub, `Channel` and `Message`, the former has then name of the distribution channel, and the latter has the channel and the message to be delivered to the subscribers.
+
+{% highlight scala %}
+case class Channel(name: String)
+case class Message(channel: Channel, payload: Any)
+{% endhighlight %}
+
+To create an `EventBus` the declaration of a the `Classifier`, `Event` and `Subscriber` types is requiered, for this `SubchannelClassification` they are set to `Channel`, `Message` and `ActorRef` respectively.
+
+{% highlight scala %}
+class PubSubServer extends EventBus with SubchannelClassification {
+  type Classifier = Channel
+  type Event = Message
+  type Subscriber = ActorRef
+{% endhighlight %}
+
+The `classify` function returns the classifier of the event, which is the channel attribute of the `Message` class. This will be used to match a specific `Channel` or subclassification to the `Channel` a subscriber has specified.
+
+{% highlight scala %}
+protected def classify(event: Event): Classifier = {
+	event.channel
+}
+{% endhighlight %}
+
+The instance of `Subclassification[Classifier]` is used to classify the channels and provides two functions, `subclassification` and `isSubclass`. The former determines an exact match while the latter is used to match subclassifications, the first argument is the `Channel` the subscriber is subscribed and the second is the `Channel` the `Message` is being published.
+
+{% highlight scala %}
+protected def subclassification = new Subclassification[Classifier] {
+	def isEqual(
+			subscribedToClassifier: Classifier,
+			eventClassifier: Classifier): Boolean = {
+
+		subscribedToClassifier.equals(eventClassifier)
+	}
+
+	def isSubclass(
+			subscribedToClassifier: Classifier,
+			eventClassifier: Classifier): Boolean = {
+
+		subscribedToClassifier.name.startsWith(eventClassifier.name)
+	}
+}
+{% endhighlight %}
+
+To use the `PubSubServer` first, some subscribers are required, which all of them all actors:
+
+{% highlight scala %}
+class SubscriberA extends Actor {
+  def receive = {
+    case msg: Message =>
+      println(msg.payload + " received from sub a")
+      Client.completedStep
+  }
+}
+{% endhighlight %}
+
+An instance of `PubSubServer` is created and now all the subscribers can subscribe to a topic of preference:  
+
+{% highlight scala %}
+pubsubserver.subscribe(subsA, Channel("topicA"))
+pubsubserver.subscribe(subsB, Channel("topicB"))
+pubsubserver.subscribe(subsC, Channel("topicA"))
+{% endhighlight %}
+
+
+Finally, to publish a message the case class `Message` is used:
+
+{% highlight scala %}
+pubsubserver.publish(Message(Channel("topicA"), "Hello"))
+{% endhighlight %}
+
+
 # Observations
 
 ## Metrics
 
-|                       |   Go   |  Elixir |
-|-----------------------|:------:|:-------:|
-| LOC                   |  121   |   62    |
-| # of Functions        |   17   |   14    |
-| Av. LOC per Function  |   7.15 |   4.42  |
-| Cyclomatic complexity |    1   |    2    |
+|                       |   Go   |  Elixir | Scala |
+|-----------------------|:------:|:-------:|:-----:|
+| LOC                   |  121   |   62    |   45  |
+| # of Functions        |   17   |   14    |   15  |
+| Av. LOC per Function  |   7.15 |   4.42  |    3  |
+| Cyclomatic complexity |    1   |    2    |    2  |
 
 
 ## Qualitative observations
