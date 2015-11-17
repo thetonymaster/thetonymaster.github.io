@@ -7,14 +7,14 @@ comments: true
 ---
 # Competing Consumers
 
-Messages arrive through a message channel, so the natural inclination of the consumer is to process them sequentially. However this can lead to bottlenecks, each message piles up over previous unprocessed messages. This can happen because of multiple messages are sent at once or because or because each message takes a lot time to process.
+Messages arrive through a message channel, so the natural inclination of the consumer is to process them sequentially. However this can lead to bottlenecks, each message piles up over previous unprocessed ones. This can happen because of multiple messages are sent at once or because or because each message takes a lot of time to process.
 
 <script src="/assets/js/processing.min.js"></script>
 <canvas data-processing-sources="/assets/processing/workers.pde"></canvas>
 
-One solution can be one application with multiple channels but one channel might become a bottleneck while others sit empty, multiple channels would have the advantage, however, having one consumer enabled processing them concurrently the number of channels would still limit the throughput.
+One solution can be one application with multiple channels; but one channel might become a bottleneck while others sit empty, this can have an advantage, however, having one consumer enabled and processing messages concurrently the number of channels would still limit the throughput.
 
-Competing consumers are created to are created to receive messages from a single channel. The messaging system decides to which consumer receives the message, but the consumers compete with each other to be the the one who receives the message.
+Competing consumers are created to receive messages from a single channel. The messaging system decides which consumer receives it. But the consumers compete with each other to be the one who receives the message.
 
 Each of the consumers processes the message concurrently, so the bottleneck becomes how quickly the the channel can feed the messages. A limited number of consumers can become the bottleneck but increasing the number can help to alleviate this constraint. To run concurrently each consumer must run with its own thread.
 
@@ -225,7 +225,7 @@ def handle_cast(:job, {queue, id} = state ) do
 end
 {% endhighlight %}
 
-The `WorkerQueue` is in charge to dispatch the jobs and to keep track of each of the workers; since `GenServer` is needed to keep state, a struct is defined to track what the workers are doing, and a backlog messages that are not yet processed:
+The `WorkerQueue` is in charge to dispatch the jobs and to keep track of each of the workers; since `GenServer` is needed to keep state, a `struct` is defined to track what the workers are doing, and a backlog messages that are not yet processed:
 
 {% highlight elixir %}
 defmodule State do
@@ -269,7 +269,7 @@ end
 {% endraw %}
 {% endhighlight %}
 
-After finishing the `Worker` and the `WorkerQueue` implementation, its needed to wrap up those parts and ensure they are working, even after a work failed, to achieve this `Supervisor` instances are used, the configuration is pretty straightforward, one is needed for the workers, and another one supervises the Worker supervisor and the queue. for qhe worker supervisor, the arguments needed are are how many workers will be spawned and the time, which along which a given time frame, will define how many restarts of a process is allowed in how much time.
+After finishing the `Worker` and the `WorkerQueue` implementation, its needed to wrap up those parts and ensure they are working, even after a work failed, to achieve this `Supervisor` instances are used, the configuration is pretty straightforward, one is needed for the workers, and another one supervises the Worker supervisor and the queue. for the worker supervisor, the arguments needed are are how many workers will be spawned and the time, which along which a given time frame, will define how many restarts of a process is allowed in how much time.
 
 {% highlight elixir %}
 defmodule Workers.WorkerSupervisor do
@@ -321,7 +321,7 @@ defmodule Workers.Supervisor do
 end
 {% endhighlight %}
 
-The main module is where job requests are sent and where everything fires up, talso, to handle asynchronous calls to the other services a `GenServer` is used, so as the last two modules a supervisor is used to initialize everything,
+The main module is where job requests are sent and where everything fires up, also, to handle asynchronous calls to the other services a `GenServer` is used, so as the last two modules a supervisor is used to initialize the other modules:
 
 {% highlight elixir %}
 def start_link(init_retry_secs, num_workers) do
@@ -362,21 +362,67 @@ def worker_supervisor_name do
 end
 {% endhighlight %}
 
+### Scala Implementation
+
+Akka's implementation is pretty straightforward. First, to send work to each of the workers a case class is defined, which receives a payload and a function.
+
+{% highlight scala %}
+case class Work(payload: Any, callback: (Any) => Unit)
+{% endhighlight %}
+
+The worker simply receives the message and executes the function with the payload:
+
+{% highlight scala %}
+class Worker extends Actor {
+  def receive = {
+    case work: Work =>
+      work.callback(work.payload)
+      println(s"${self.path.name} Just finished a job")
+      CompetingConsumers.completedStep
+  }
+}
+{% endhighlight %}
+
+`SmallestMailboxPool` is an Akka standard router that supports competing consumers. It can be configured to have a number of worker performers and attempts to send messages to the worker with fewer messages in their mailbox. The pool might have local and remote actors, but if the actor is remote it can't see its mailbox, so it's normally avoided to use them.
+
+{% highlight scala %}
+val workItemsProvider = system.actorOf(
+										Props[Worker]
+											.withRouter(SmallestMailboxPool(nrOfInstances = 5)))
+{% endhighlight %}
+
+And that's basically it, now messages can be send to the workers using `workItemsProvider` reference:
+
+{% highlight scala %}
+def sleep(time: Any): Unit = {
+	Thread.sleep(time.asInstanceOf[Int])
+}
+
+val r = scala.util.Random
+for (itemCount <- 1 to 10) {
+
+	workItemsProvider ! Work(r.nextInt(3000), sleep)
+}
+{% endhighlight %}
+
+
 # Observations
 
 ## Metrics
 
-|                       |   Go   |  Elixir |
-|-----------------------|:------:|:-------:|
-| LOC                   |   99   |  115    |
-| # of Functions        |   7    |   17    |
-| Av. LOC per Function  |  14.14 |   6.67  |
-| Cyclomatic complexity |    2   |    1    |
+|                       |   Go   |  Elixir | Scala |
+|-----------------------|:------:|:-------:|:-----:|
+| LOC                   | 131    |  144    |   48  |
+| # of Functions        |   7    |   17    |   10  |
+| Av. LOC per Function  |  18.71 |   8.47  |    4.8|
+| Cyclomatic complexity |    2   |    1    |    2  |
 
 
 ## Qualitative observations
 
-This pattern is where go channels really shine, since their approach is to share memory through communicating, it can easily simplify the way multiple processes communicate, since the channel that queues the workers is also the channel that hosts the channel where a job is sent, a lot of complexity is avoided by this, also the `select` statement really helps to decide what is going to be done depending on which channel receives data, the only bad part is that go lacks a way to manage the goroutines, while elixir has the supervisors which really help in turning on a lot of stuff.
+This pattern is where go channels really shine, since their approach is to share memory through communicating, it can easily simplify the way multiple processes communicate, since the channel that queues the workers is also the channel that hosts the channel where a job is sent, a lot of complexity is avoided by this, also the `select` statement really helps to decide what is going to be done depending on which channel receives data, the only bad part is that go lacks a way to manage the goroutines.
+
+While elixir has the supervisors which really help a lot turning on the remaining modules necessary and giving fine grained configuration on for each one of them, but it's quite difficult to understand how they work at the beginning. 
 
 # Bibliography
 
