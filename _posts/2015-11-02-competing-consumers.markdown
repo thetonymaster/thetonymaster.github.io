@@ -422,7 +422,7 @@ for (itemCount <- 1 to 10) {
 
 This pattern is where go channels really shine, since their approach is to share memory through communicating, it can easily simplify the way multiple processes communicate, since the channel that queues the workers is also the channel that hosts the channel where a job is sent, a lot of complexity is avoided by this, also the `select` statement really helps to decide what is going to be done depending on which channel receives data, the only bad part is that go lacks a way to manage the goroutines.
 
-While elixir has the supervisors which really help a lot turning on the remaining modules necessary and giving fine grained configuration on for each one of them, but it's quite difficult to understand how they work at the beginning. 
+While elixir has the supervisors which really help a lot turning on the remaining modules and giving fine grained configuration for each one of them, but it's quite difficult to understand how they work at the beginning. On the other hand Akka's `SmallestMailboxPool` is fairly simple and it gives a straightforward implementation. But the main problem is that it's that it's not really the intended use of the library and each consumer does not take only one unit of work, but several requests are queued in the Actor's mailbox. Even if a default Supervisor is given, it's not clear what happens if an exception on a worker happens and it exits.
 
 # Bibliography
 

@@ -268,7 +268,9 @@ pubsubserver.publish(Message(Channel("topicA"), "Hello"))
 
 ## Qualitative observations
 
-Handling channels is quite a nuisance in go,  since they are their own datatype and they is basically stateless, all the management must be done by big routines that check for every state that a custom type must carry with, on the other hand, elixir processes (at least with GenServer or custom loops) can carry a state on the same message received and respond to it accordingly, making easier the development of patterns like this. But, since messaging in Elixir must be done via pattern matching, it can lead to write to more functions, may be small but it can lead to be more complex than in go. Besides, custom types in go can also include functions or more custom types that an specific app can need.
+Handling channels is quite a nuisance in go,  since they are their own datatype and they is basically stateless, all the management must be done by big routines that check for every state that a custom type must carry with, on the other hand, elixir processes (at least with GenServer or custom loops) can carry a state on the same message received and respond to it accordingly, making easier the development of patterns like this. But, since messaging in Elixir must be done via pattern matching, it can lead to write to more functions, they might be small but it can lead to be more complex than in go. Besides, custom types in go can also include functions or more custom types that an specific app can need.
+
+Akka has already an implementation of PubSub and only requires some boilerplate code, and the methods can be customized as one sees fit; but the main problem is that these methods still use boolean types which could be avoided if the language used pattern matching instead.
 
 # Bibliography
 
