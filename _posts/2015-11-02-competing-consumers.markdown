@@ -387,8 +387,8 @@ class Worker extends Actor {
 
 {% highlight scala %}
 val workItemsProvider = system.actorOf(
-										Props[Worker]
-											.withRouter(SmallestMailboxPool(nrOfInstances = 5)))
+				Props[Worker]
+				.withRouter(SmallestMailboxPool(nrOfInstances = 5)))
 {% endhighlight %}
 
 And that's basically it, now messages can be send to the workers using `workItemsProvider` reference:
