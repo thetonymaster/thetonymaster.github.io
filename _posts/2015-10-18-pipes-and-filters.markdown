@@ -167,9 +167,9 @@ val filter1 = system.actorOf(Props(classOf[WeatherEndpoint], filter2), "weatherE
 
 |                       |   Go   |  Elixir |  Scala  |
 |-----------------------|:------:|:-------:|:--------|
-| LOC                   |  241   |   95    |    96   |
+| LOC                   |  292   |  124    |   149   |
 | # of Functions        |   10   |   16    |    16   |
-| Av. LOC per Function  |   24.1 |    5.93 |     6   |
+| Av. LOC per Function  |   29.2 |    7.75 |   9.31  |
 | Cyclomatic complexity |    5   |    1    |     3   |
 
 

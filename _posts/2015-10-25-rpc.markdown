@@ -279,9 +279,9 @@ override def preStart(): Unit = {
 
 |                       |   Go  |  Elixir | Scala |
 |-----------------------|:-----:|:-------:|:------|
-| LOC                   | 40    |   51    |  31   |
+| LOC                   | 52    |   71    |  60   |
 | # of Functions        |  3    |    9    |   6   |
-| Av. LOC per Function  | 13.33 |    5.66 |   5.1 |
+| Av. LOC per Function  | 17.33 |    7.88 |  10   |
 | Cyclomatic complexity |  5    |    1    |   3   |
 
 
