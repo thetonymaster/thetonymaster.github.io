@@ -32,14 +32,14 @@ defmodule Splitter do
 
   def send_payment(%{payment: payment}) do
     paymment_processor_name()
-    |> GenServer.cast(:payment, payment)
+    |> GenServer.cast({:payment, payment})
   end
   def send_payment(_) do
   end
 
   def send_inventory(%{request: request}) do
     inventory_name()
-    |> GenServer.cast(:request, request)
+    |> GenServer.cast({:request, request})
   end
   def send_inventory(_) do
   end
