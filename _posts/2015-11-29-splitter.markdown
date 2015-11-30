@@ -1,0 +1,222 @@
+---
+layout: post
+title:  "Splitter"
+date:   2015-11-02 22:09:02
+categories: patterns go elixir
+comments: true
+---
+
+# Splitter Router
+
+An splitter router splits a single message into multiple messages. This is mostly used to separate a large message into its individual parts to be sent as individual messages to different subsystems. For example, an order might be composed of various items or contain a certain number of different components (ie. payment information, inventory, etc.), if the whole message is sent a detrimental impact on the network resources or in the application performance might happen, so the message is split so different subsystems can handle it.
+
+This subsystems can be of the same type (like inventory systems) to avoid the impact int one subsystem or maybe a different treatment might be applied to them (different products might require different shipping and handling for example) or a large message can be processed concurrently (storing different parts of an order in different databases).
+
+## Advantages
+
+- Large messages can be processed quickly
+- The message is not constrained to a certain format
+- Can reduce errors produced when sending large messages
+- Big messages can be processed concurrently
+
+## Disadvantages
+
+- There is no control over duplicated messages
+
+# The problem
+
+1. An order arrives
+2. Send each part of an order to it's respective subsystem
+
+## Implementation
+
+### Go Implementation
+
+There are three subsystems in every implementation, inventory, payments and orders, since the purpose of this is to illustrate how a pattern works and not to fully implement them, every one of them just prints the request and simulates that work is done, since all of the subsystems are basically the same, only one will be described. However, the subsystems could also be instance of only one kind.
+
+Like other patterns implemented in the past, a type is created. This type holds a channel which receives all the messages:
+
+{% highlight go %}
+type InventoryManager struct {
+	requests chan InventoryRequest
+	random   *rand.Rand
+}
+{% endhighlight %}
+
+Each of the attributes is private, so they can be only seen on a package level. This channel can be exported, but since it will be generated with the `channel generator` pattern does not really matter, it also could not be exported and instead attach a method to this type to work with the channel , but for sale of simplicity the former approach will be used:
+
+{% highlight go %}
+package inventory
+
+func New(capacity int) chan InventoryRequest {
+	requests := make(chan InventoryRequest, capacity)
+
+	s1 := rand.NewSource(time.Now().UnixNano())
+	r1 := rand.New(s1)
+
+	inventorym := InventoryManager{
+		requests: requests,
+		random:   r1,
+	}
+
+	go inventorym.start()
+	return requests
+}
+{% endhighlight %}
+
+{% highlight go %}
+package splitter
+
+func New(capacity int) chan Order {
+	orders := make(chan Order, capacity)
+
+	splitter := Splitter{
+		orders: orders,
+	}
+
+	go splitter.start()
+	return orders
+}
+{% endhighlight %}
+
+Before returning the channel a goroutine is started with the `start` method, this method only waits until a message arrives and prints the content:
+
+{% highlight go %}
+func (inventorym InventoryManager) start() {
+	for request := range inventorym.requests {
+		tm, _ := time.ParseDuration(fmt.Sprintf("%vs", inventorym.random.Int31n(10)))
+		time.Sleep(tm)
+		fmt.Println(request)
+	}
+}  
+{% endhighlight %}
+
+
+
+The `splitter` initializes each of the subsystems, and waits until a message is received and forwards it to the rest of the subsystems:
+
+{% highlight go %}
+func (splitter Splitter) start() {
+	payments := paymentprocessor.New(10)
+	orders := orderprocesor.New(10)
+	inv := inventory.New(10)
+
+	for order := range splitter.orders {
+		orders <- order.OrderDetails
+		payments <- order.PaymentDetails
+		inv <- order.InventoryRequest
+	}
+}
+{% endhighlight %}
+
+In this case, the channels are not stored anywhere, but they can be inside a struct or if a more dynamic approach is needed, they can be atored in a map, in which the key could be the name of the subsystem.
+
+### Elixir implementation
+
+Following past examples, elixir subsystems use `GenServer` and a `Supervisor`:
+
+{% highlight elixir %}
+defmodule Splitter.Inventory do
+  use GenServer
+
+  def start_link(name) do
+    GenServer.start_link(__MODULE__, :ok, [{:name, name}])
+  end
+
+  def handle_cast({:request, request}, state) do
+    Splitter.Timer.sleep()
+    IO.puts "#{inspect request}"
+    {:noreply, state}
+  end
+
+end
+
+defmodule Splitter.Supervisor do
+
+  def start_link do
+    import Supervisor.Spec
+
+    children = [
+      worker(Splitter.Inventory, [Splitter.inventory_name()],id: :inventory),
+      worker(Splitter.PaymentProcessor, [Splitter.paymment_processor_name()],id: :paymentprocessor),
+      worker(Splitter.OrderProcessor, [Splitter.order_processor_name()],id: :orderprocessor)
+    ]
+
+    Supervisor.start_link(children, strategy: :one_for_one)
+  end
+
+end
+
+{% endhighlight %}
+
+The message sent to the `splitter` is a map of values, and each of the messages are chunked using pattern matching:
+
+{% highlight elixir %}
+def handle_cast({:order, order}, state) do
+  send_order(order)
+  send_payment(order)
+  send_inventory(order)
+  {:noreply, state}
+end
+
+def send_order(%{order: order}) do
+  order_processor_name()
+  |> GenServer.cast({:order, order})
+end
+def send_order(_) do
+end
+{% endhighlight %}
+
+### Scala Implementation
+
+For scala, the contents have to be declared as case classes first (since Go is also a static typed language, they are also declared as types) each of the actor receives a case class and prints it:
+
+{% highlight scala %}
+class InventoryProcessor extends Actor {
+  val r = scala.util.Random
+
+  def receive = {
+    case request: InventoryRequest =>
+      println(s"InventoryProcessor: processing $request")
+      r.nextInt(3000)
+      Thread.sleep(r.nextInt(3000))
+      Splitter.completedStep()
+    case _ =>
+      println("InventoryProcessor: unexpected")
+  }
+}
+{% endhighlight %}
+
+
+After each of the subsystem actors it's initialized, when an order arrives it's chunked and sent to each one of them:
+
+{% highlight scala %}
+class OrderRouter extends Actor {
+  val orderProcessor = context.actorOf(Props[OrderProcessor], "orderProcessor")
+  val inventoryProcessor = context.actorOf(Props[InventoryProcessor], "inventoryProcessor")
+  val paymentProcessor = context.actorOf(Props[PaymentProcessor], "paymentProcessor")
+
+  def receive = {
+    case order: CompleteOrder =>
+      orderProcessor ! order.order
+      inventoryProcessor ! order.request
+      paymentProcessor ! order.payment
+      Splitter.completedStep()
+  }
+}
+{% endhighlight %}
+
+# Observations
+
+## Metrics
+
+|                       |   Go   |  Elixir | Scala |
+|-----------------------|:------:|:-------:|:-----:|
+| LOC                   | 205    |  97     |   97  |
+| # of Functions        |  10    |   14    |   13  |
+| Av. LOC per Function  |  20.5  |   6.92  |   7.46|
+| Cyclomatic complexity |    2   |    1    |    2  |
+
+## Qualitative observations
+
+Go and Scala share some similarities, while the former it's not a fully object oriented language and the latter is, bot of them have a lot of boilerplate code pertaining types. Elixir's `GenServer` and `Supervisor` also add some boilerplate too, but it helps to maintain a simple start to the application, which the other two languages lack. It maybe would be simpler to use the `receive` method, it could lead to write less code on the subsystem (the state it's not used on any of them).
