@@ -10,6 +10,9 @@ comments: true
 
 An splitter router splits a single message into multiple messages. This is mostly used to separate a large message into its individual parts to be sent as individual messages to different subsystems. For example, an order might be composed of various items or contain a certain number of different components (ie. payment information, inventory, etc.), if the whole message is sent a detrimental impact on the network resources or in the application performance might happen, so the message is split so different subsystems can handle it.
 
+<script src="/assets/js/processing.min.js"></script>
+<canvas data-processing-sources="/assets/processing/splitter.pde"></canvas>
+
 This subsystems can be of the same type (like inventory systems) to avoid the impact int one subsystem or maybe a different treatment might be applied to them (different products might require different shipping and handling for example) or a large message can be processed concurrently (storing different parts of an order in different databases).
 
 ## Advantages
