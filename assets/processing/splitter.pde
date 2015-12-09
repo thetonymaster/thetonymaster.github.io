@@ -255,7 +255,6 @@ class Message {
     float yspeed = cos(a);
 
     if (msgDist > (pipeDist + 10)) {
-      println("Herro");
       done = true;
       if (split) {
         messages.add(new Message(250,200, p[1], false, r, 0, 0));
