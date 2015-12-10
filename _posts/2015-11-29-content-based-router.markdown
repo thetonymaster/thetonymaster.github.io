@@ -185,8 +185,8 @@ class OrderRouter extends Actor {
 |                       |   Go   |  Elixir | Scala |
 |-----------------------|:------:|:-------:|:-----:|
 | LOC                   | 119    |  50     |   86  |
-| # of Functions        |  10    |   14    |    3  |
-| Av. LOC per Function  |  23.8  |   6.25  |   27.2|
+| # of Functions        |  10    |   14    |    12 |
+| Av. LOC per Function  |  11.9  |   3.57  |  7.66 |
 | Cyclomatic complexity |    1   |    1    |    5  |
 
 
