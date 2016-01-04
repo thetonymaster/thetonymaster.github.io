@@ -187,7 +187,7 @@ class OrderRouter extends Actor {
 | LOC                   | 119    |  50     |   86  |
 | # of Functions        |  10    |   14    |    12 |
 | Av. LOC per Function  |  11.9  |   3.57  |  7.66 |
-| Cyclomatic complexity |    1   |    1    |    5  |
+| Cyclomatic complexity | 1.83   |    1    |  3.33 |
 
 
 ## Qualitative Observations

@@ -263,7 +263,7 @@ pubsubserver.publish(Message(Channel("topicA"), "Hello"))
 | LOC                   |  166   |   83    |   90  |
 | # of Functions        |   17   |   14    |   15  |
 | Av. LOC per Function  |   9.76 |   5.92  |    6  |
-| Cyclomatic complexity |    1   |    2    |    2  |
+| Cyclomatic complexity | 2.41   |    2    |    2  |
 
 
 ## Qualitative observations

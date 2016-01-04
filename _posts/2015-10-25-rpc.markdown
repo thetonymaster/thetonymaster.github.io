@@ -282,7 +282,7 @@ override def preStart(): Unit = {
 | LOC                   | 52    |   71    |  60   |
 | # of Functions        |  3    |    9    |   6   |
 | Av. LOC per Function  | 17.33 |    7.88 |  10   |
-| Cyclomatic complexity |  5    |    1    |   3   |
+| Cyclomatic complexity | 2.67  |    1    | 2.66  |
 
 
 # Qualitative observations

@@ -170,7 +170,7 @@ val filter1 = system.actorOf(Props(classOf[WeatherEndpoint], filter2), "weatherE
 | LOC                   |  292   |  124    |   149   |
 | # of Functions        |   10   |   16    |    16   |
 | Av. LOC per Function  |   29.2 |    7.75 |   9.31  |
-| Cyclomatic complexity |    5   |    1    |     3   |
+| Cyclomatic complexity |   2.7   |    1    |  2.42   |
 
 
 ## Qualitative observations
